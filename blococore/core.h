@@ -12,6 +12,7 @@ enum {
     B_PLANKS, B_CTABLE, B_FURNACE, B_GLASS,
     B_COAL_ORE, B_IRON_ORE, B_GOLD_ORE, B_REDSTONE_ORE, B_LAPIS_ORE, B_DIAMOND_ORE, B_EMERALD_ORE,
     B_IRON_BLOCK, B_GOLD_BLOCK, B_DIAMOND_BLOCK, B_BEDROCK,
+    B_SAPLING,          // muda: sem colisao, cresce em carvalho (ids antigos mantidos para o save)
     NUM_BLOCKS
 };
 
@@ -80,6 +81,17 @@ extern int numRecipes;
 void initRecipes(void);
 bool canCraft(int r, bool hasTable, bool hasFurnace);
 bool craft(int r, bool hasTable, bool hasFurnace);
+
+// ---------- Mudas ----------
+// Java: a muda recebe ~3 ticks aleatorios por 4096 blocos por tick e cada um
+// tem 1/7 de chance de avancar um dos 2 estagios (~16 min de jogo). Aqui e um
+// estagio so, com chance 1/14 por tick aleatorio, e mais ticks por frame
+// (SAPLING_TICKS_MIN) para uma muda virar arvore em ~2 min em media.
+#define SAPLING_GROW_CHANCE 14
+#define SAPLING_TICKS_MIN   2          // minutos medios ate crescer
+bool blocksMove(int block);            // tem colisao?
+bool saplingSoil(int block);           // a muda pode ficar em cima deste bloco?
+int  saplingRandomTicks(int volume);   // ticks aleatorios por frame (60 fps) para o mundo todo
 
 // ---------- Aleatorio ----------
 uint32_t rnd(void);

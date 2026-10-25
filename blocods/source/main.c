@@ -43,7 +43,7 @@ static bool optInvertY = false;
 static int renderR = 8;        // 6..8
 
 static u8 world[WX][WY][WZ];
-static u8 faces[WX][WY][WZ];   // bits: 0 +X, 1 -X, 2 +Y, 3 -Y, 4 +Z, 5 -Z
+static u8 faces[WX][WY][WZ];   // bits: 0 +X, 1 -X, 2 +Y, 3 -Y, 4 +Z, 5 -Z, 6 muda
 static u8 heightMap[WX][WZ];
 static bool mapDirty = true;   // minimapa precisa redesenhar
 
@@ -55,12 +55,13 @@ static inline int getBlock(int x, int y, int z) {
     if (!inBounds(x, y, z)) return B_BEDROCK;
     return world[x][y][z];
 }
-static inline bool solid(int x, int y, int z) { return getBlock(x, y, z) != B_AIR; }
+static inline bool solid(int x, int y, int z) { return blocksMove(getBlock(x, y, z)); }   // muda nao conta
 
 static void computeFaces(int x, int y, int z) {
     if (!inBounds(x, y, z)) return;
     u8 m = 0;
-    if (world[x][y][z] != B_AIR) {
+    if (world[x][y][z] == B_SAPLING) m = 64;   // bit 6: desenha a muda em X
+    else if (world[x][y][z] != B_AIR) {
         if (!solid(x + 1, y, z)) m |= 1;
         if (!solid(x - 1, y, z)) m |= 2;
         if (!solid(x, y + 1, z)) m |= 4;
@@ -183,6 +184,42 @@ static void generateWorld(void) {
     mapDirty = true;
 }
 
+// ---------------- Mudas ----------------
+static int saplingTicks;   // ticks aleatorios por frame (ver core.h)
+
+static void recomputeFacesBox(int x0, int y0, int z0, int x1, int y1, int z1) {
+    for (int x = x0; x <= x1; x++)
+        for (int y = y0; y <= y1; y++)
+            for (int z = z0; z <= z1; z++) computeFaces(x, y, z);
+}
+
+static bool playerInBox(int x0, int y0, int z0, int x1, int y1, int z1);
+
+// muda em (x,y,z) vira carvalho: precisa de terra embaixo, ceu aberto
+// (so ar ou folhas acima) e espaco para o tronco mais alto (6)
+static bool growSapling(int x, int y, int z) {
+    if (!saplingSoil(getBlock(x, y - 1, z)) || y + 7 >= WY) return false;
+    for (int yy = y + 1; yy < WY; yy++) {
+        int b = world[x][yy][z];
+        if (b != B_AIR && b != B_LEAVES) return false;
+    }
+    if (playerInBox(x - 2, y, z - 2, x + 2, y + 7, z + 2)) return false;
+    world[x][y][z] = B_AIR;
+    world[x][y - 1][z] = B_DIRT;          // como no Java, a grama embaixo vira terra
+    placeTree(x, y - 1, z);
+    recomputeFacesBox(x - 3, y - 1, z - 3, x + 3, y + 8, z + 3);
+    mapDirty = true;
+    return true;
+}
+
+static void randomTicks(void) {
+    for (int i = 0; i < saplingTicks; i++) {
+        u32 r = rnd() % (WX * WY * WZ);
+        int x = (int)(r / (WY * WZ)), y = (int)(r / WZ % WY), z = (int)(r % WZ);
+        if (world[x][y][z] == B_SAPLING && rnd() % SAPLING_GROW_CHANCE == 0) growSapling(x, y, z);
+    }
+}
+
 // ---------------- Jogador ----------------
 #define P_HW   FXF(0.3)
 #define P_H    FXF(1.75)
@@ -195,6 +232,13 @@ static fx px, py, pz, vy;
 static int yaw = 0, pitch = 0;
 static bool onGround = false;
 static int selSlot = 0;
+
+static bool playerInBox(int x0, int y0, int z0, int x1, int y1, int z1) {
+    int ax = (px - P_HW) >> 12, bx = (px + P_HW - 1) >> 12;
+    int ay = py >> 12,          by = (py + P_H - 1) >> 12;
+    int az = (pz - P_HW) >> 12, bz = (pz + P_HW - 1) >> 12;
+    return ax <= x1 && bx >= x0 && ay <= y1 && by >= y0 && az <= z1 && bz >= z0;
+}
 
 static bool collides(fx x, fx y, fx z) {
     int x0 = (x - P_HW) >> 12, x1 = (x + P_HW - 1) >> 12;
@@ -347,6 +391,29 @@ static void drawBlockFace(int t, int f, int x, int y, int z, int d2, bool hl, in
     }
 }
 
+// muda: caule fino e dois losangos de folhas cruzados na diagonal
+static void drawSapling(int x, int y, int z, int d2, bool hl) {
+    const BlockInfo *bi = &blockInfo[B_SAPLING];
+    int bright = hl ? 5 : 0;
+    int X = x * S + S / 2, Y = y * S, Z = z * S + S / 2, w = S / 16;
+    glColor(shadeColor(bi->det, 0, x, y, z, d2, bright, 0));
+    for (int k = 0; k < 2; k++) {
+        int dx = k ? 0 : w, dz = k ? w : 0;
+        glVertex3v16((v16)(X - dx), (v16)Y, (v16)(Z - dz)); glVertex3v16((v16)(X - dx), (v16)(Y + S / 2), (v16)(Z - dz));
+        glVertex3v16((v16)(X + dx), (v16)(Y + S / 2), (v16)(Z + dz)); glVertex3v16((v16)(X + dx), (v16)Y, (v16)(Z + dz));
+        quadCount++;
+    }
+    for (int k = 0; k < 2; k++) {
+        int d = S * 3 / 8, dz = k ? -d : d, mid = Y + S * 9 / 16;
+        glColor(shadeColor(k ? bi->side : bi->top, k ? 0 : 4, x, y, z, d2, bright, 0));
+        glVertex3v16((v16)X, (v16)(Y + S / 4), (v16)Z);
+        glVertex3v16((v16)(X - d), (v16)mid, (v16)(Z - dz));
+        glVertex3v16((v16)X, (v16)(Y + S * 7 / 8), (v16)Z);
+        glVertex3v16((v16)(X + d), (v16)mid, (v16)(Z + dz));
+        quadCount++;
+    }
+}
+
 static void renderWorld(void) {
     fx ex = px, ey = py + P_EYE, ez = pz;
     int cx = ex >> 12, cy = ey >> 12, cz = ez >> 12;
@@ -388,6 +455,11 @@ static void renderWorld(void) {
                 if (!m) continue;
                 int dy = y - cy, d2 = dxz + dy * dy;
                 if (d2 > R2) continue;
+                if (m & 64) {
+                    drawSapling(x, y, z, d2, hasHit && x == hitX && y == hitY && z == hitZ);
+                    if (quadCount >= MAX_QUADS) goto done;
+                    continue;
+                }
                 if (ex <= FX(x + 1)) m &= ~1;
                 if (ex >= FX(x))     m &= ~2;
                 if (ey <= FX(y + 1)) m &= ~4;
@@ -635,7 +707,7 @@ static int mapColorTop(int x, int z) {
         bool low = y < 15;
         switch (b) {
         case B_GRASS:  return low ? MC_GRASS2 : MC_GRASS;
-        case B_LEAVES: return MC_LEAF;
+        case B_LEAVES: case B_SAPLING: return MC_LEAF;
         case B_SAND:   return MC_SAND;
         case B_DIRT: case B_GRAVEL: return MC_DIRT;
         case B_LOG: case B_PLANKS: case B_CTABLE: return MC_WOOD;
@@ -1057,6 +1129,7 @@ void gameInit(void) {
 
     fatOk = fatInitDefault();
     initRecipes();
+    saplingTicks = saplingRandomTicks(WX * WY * WZ);
     invClear();
     if (loadGame()) setToast("SAVE CARREGADO");
     else { generateWorld(); spawnPlayer(); }
@@ -1104,6 +1177,10 @@ void gameFrame(void) {
         if (mineNeed > 0 && ++mineProg >= mineNeed) {
             harvest(world[mineX][mineY][mineZ], selSlot);
             setBlock(mineX, mineY, mineZ, B_AIR);
+            if (getBlock(mineX, mineY + 1, mineZ) == B_SAPLING) {   // muda sem chao solta
+                setBlock(mineX, mineY + 1, mineZ, B_AIR);
+                addItem(B_SAPLING, 1);
+            }
             stopMining();
             mineCooldown = 18;   // 6 ticks entre blocos (Java)
         }
@@ -1116,7 +1193,9 @@ void gameFrame(void) {
     // colocar com A
     if ((down & KEY_A) && hasHit && inBounds(prevX, prevY, prevZ)) {
         Slot *s = &inv[selSlot];
-        if (isPlaceable(s->id) && world[prevX][prevY][prevZ] == B_AIR) {
+        bool soilOk = s->id != B_SAPLING || saplingSoil(getBlock(prevX, prevY - 1, prevZ));
+        if (isPlaceable(s->id) && world[prevX][prevY][prevZ] == B_AIR && !soilOk) setToast("MUDA SO EM GRAMA OU TERRA");
+        else if (isPlaceable(s->id) && world[prevX][prevY][prevZ] == B_AIR) {
             setBlock(prevX, prevY, prevZ, s->id);
             if (collides(px, py, pz)) setBlock(prevX, prevY, prevZ, B_AIR);
             else if (!--s->count) s->id = 0;
@@ -1132,6 +1211,7 @@ void gameFrame(void) {
         if (cave != lastCave) { lastCave = cave; mapCave = cave; mapDirty = true; uiDirty = true; }
         if (tab == TAB_WORLD) uiDirty = true;      // coordenadas
     }
+    randomTicks();
     if (mapCave && (frame & 31) == 0) mapDirty = true;   // fatia acompanha a altura
     if (mapDirty && tab == TAB_WORLD) { drawMinimapTiles(); mapDirty = false; }
     if (toastTime && !--toastTime) uiDirty = true;

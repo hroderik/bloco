@@ -8,8 +8,8 @@
 // Banco 0: terreno e jogador. Banco 1: minerios, metais e itens.
 extern const uint16_t artPal[2][16];
 
-#define ART_WALL   24     // parede de caverna (terra)
-#define ART_WALL2  25     // parede de caverna (pedra)
+#define ART_WALL   30     // parede de caverna (terra); depois dos ids de bloco
+#define ART_WALL2  31     // parede de caverna (pedra)
 #define ART_PLAYER 120    // 8x16 (2 tiles)
 #define ART_FRAME  122    // moldura de selecao
 #define ART_DOT    123    // ponto do jogador no minimapa
