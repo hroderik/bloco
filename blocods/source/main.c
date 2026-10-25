@@ -586,6 +586,25 @@ static void nameFit(int id, char *buf, int max) {
     itemName(id, buf);
     if ((int)strlen(buf) > max) buf[max] = 0;
 }
+// nome curto para a lista de receitas: "PIC. FERRO", "BLOCO OURO", "TABUAS";
+// se ainda nao couber, corta com ponto ("CARVAO VEGET.")
+static void listName(int id, char *buf, int max) {
+    if (isTool(id)) {
+        static const char *t[] = {"PIC.", "MACH.", "PA", "ESP."};
+        static const char *m[] = {"MADEIRA", "PEDRA", "FERRO", "OURO", "DIAMANTE"};
+        sprintf(buf, "%s %s", t[toolType(id)], m[toolMat(id)]);
+    } else {
+        static const char *cut[] = {" de Carvalho", " de Trabalho"};
+        itemName(id, buf);
+        for (unsigned i = 0; i < sizeof cut / sizeof *cut; i++) {
+            char *p = strstr(buf, cut[i]);
+            if (p) *p = 0;
+        }
+        char *p = strstr(buf, " de ");
+        if (p && (!strncmp(buf, "Bloco", 5) || !strncmp(buf, "Barra", 5))) memmove(p + 1, p + 4, strlen(p + 4) + 1);
+    }
+    if ((int)strlen(buf) > max) { buf[max - 1] = '.'; buf[max] = 0; }
+}
 
 // ---- sprites (OAM sombra) ----
 static u16 oamShadow[128 * 4];
@@ -774,6 +793,8 @@ static void drawCraftTab(void) {
     uiButton(18, 3, 7, 3, false);              uiTextC(18, 7, 4, "^", P_UI);
     uiButton(25, 3, 7, 3, false);              uiTextC(25, 7, 4, "V", P_UI);
 
+    // lista: uma linha de texto por receita e uma linha livre entre elas;
+    // icone 16x16 centrado na linha, quantidade ou estacao (icone 8x8) a direita
     uiPanel(0, 6, 18, 18);
     char name[40];
     for (int i = 0; i < 8 && craftScroll + i < craftCount; i++) {
@@ -782,12 +803,11 @@ static void drawCraftTab(void) {
         int y = 7 + i * 2;
         bool can = canCraft(ri, hasTable, hasFurnace);
         bool sel = craftScroll + i == craftCur;
-        nameFit(r->out, name, 14);
-        uiText(3, y, name, sel ? P_GOLD : (can ? P_UI : P_GREY));
-        char b[24];
-        sprintf(b, "X%d %s", r->outN, r->station == ST_TABLE ? "BANC" : (r->station == ST_FURNACE ? "FORN" : ""));
-        uiText(3, y + 1, b, P_GREY);
-        if (sel) uiText(1, y + 1, ">", P_GOLD);
+        if (sel)
+            for (int x = 1; x < 17; x++) UI_PNL[y * 32 + x] = (u16)((T_BUTTON + 4) | (P_SEL << 12));
+        listName(r->out, name, r->outN > 1 ? 11 : 13);
+        uiText(3, y, name, can || sel ? P_UI : P_GREY);
+        if (r->outN > 1) { char b[8]; sprintf(b, "X%d", r->outN); uiText(15, y, b, sel ? P_GOLD : P_GREY); }
     }
     if (!craftCount) uiText(2, 8, "NADA POR ENQUANTO", P_GREY);
 
@@ -809,12 +829,12 @@ static void drawCraftTab(void) {
         else if (r->station == ST_TABLE) uiText(19, 11, "BANCADA", hasTable ? P_GREEN : P_RED);
         else uiText(19, 11, "FORNALHA", hasFurnace ? P_GREEN : P_RED);
         uiText(19, 13, "PRECISA", P_GREY);
-        for (int i = 0; i < r->n; i++) {
+        for (int i = 0; i < r->n; i++) {      // ingrediente: nome e "tem/precisa", linha livre entre eles
             int have = countItem(r->inId[i]);
+            listName(r->inId[i], name, 10);
+            uiText(21, 14 + i * 3, name, P_UI);
             sprintf(b, "%d/%d", have > 99 ? 99 : have, r->inN[i]);
-            uiText(21, 14 + i * 2, b, have >= r->inN[i] ? P_GREEN : P_RED);
-            nameFit(r->inId[i], name, 12);
-            uiText(19, 15 + i * 2, name, P_GREY);
+            uiText(21, 15 + i * 3, b, have >= r->inN[i] ? P_GREEN : P_RED);
         }
         if (r->station == ST_FURNACE) {
             sprintf(b, "COMB %d.%d", fuelHalf / 2, (fuelHalf & 1) * 5);
@@ -869,12 +889,16 @@ static void drawUI(void) {
     } else if (tab == TAB_BAG) {
         for (int s = 0; s < INV_SIZE; s++) sprIcon16((2 + (s % 9) * 3) * 8, (4 + (s / 9) * 3) * 8, inv[s].id);
     } else if (tab == TAB_CRAFT) {
-        for (int i = 0; i < 8 && craftScroll + i < craftCount; i++)
-            sprIcon16(8, (7 + i * 2) * 8, recipes[craftList[craftScroll + i]].out);
+        for (int i = 0; i < 8 && craftScroll + i < craftCount; i++) {
+            const Recipe *r = &recipes[craftList[craftScroll + i]];
+            int y = (7 + i * 2) * 8;
+            sprIcon16(8, y - 4, r->out);
+            if (r->station != ST_NONE) sprIcon8(16 * 8 + 4, y, r->station == ST_TABLE ? B_CTABLE : B_FURNACE);
+        }
         if (craftCount) {
             const Recipe *r = &recipes[craftList[craftCur]];
             sprIcon16(19 * 8, 7 * 8, r->out);
-            for (int i = 0; i < r->n; i++) sprIcon8(19 * 8, (14 + i * 2) * 8, r->inId[i]);
+            for (int i = 0; i < r->n; i++) sprIcon16(19 * 8 - 4, (14 + i * 3) * 8 + 2, r->inId[i]);
         }
     }
 }
