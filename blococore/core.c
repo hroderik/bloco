@@ -29,6 +29,7 @@ const BlockInfo blockInfo[NUM_BLOCKS] = {
     [B_GOLD_BLOCK]   = {"Bloco de Ouro",          "Bo", {31,26,8},  {29,23,6},  {0,0,0},    DET_NONE, 30,     TOOL_PICK,   3, B_GOLD_BLOCK, 1, 1},
     [B_DIAMOND_BLOCK]= {"Bloco de Diamante",      "Bd", {14,29,28}, {12,26,25}, {0,0,0},    DET_NONE, 50,     TOOL_PICK,   3, B_DIAMOND_BLOCK, 1, 1},
     [B_BEDROCK]      = {"Rocha-Matriz",           "Rm", {6,6,6},    {5,5,5},    {12,12,12}, DET_SPOT, 0xFFFF, TOOL_NONE,   0, 0, 0, 0},
+    [B_SAPLING]      = {"Muda de Carvalho",       "Mu", {8,22,5},   {5,15,3},   {13,9,4},   DET_NONE, 0,      TOOL_NONE,   0, B_SAPLING, 1, 1},
 };
 
 static const struct { const char *name; const char *ab; } simpleItems[] = {
@@ -157,6 +158,7 @@ void harvest(int block, int heldSlot) {
             uint32_t r = rnd() % 1000;
             if (r < 5) addItem(I_APPLE, 1);               // 0,5%
             else if (r < 25) addItem(I_STICK, 1 + (int)(rnd() & 1)); // 2%
+            else if (r < 75) addItem(B_SAPLING, 1);       // 5%
         } else if (block == B_GRAVEL && rnd() % 10 == 0) {
             addItem(I_FLINT, 1);                          // 10%
         } else if (b->drop) {
@@ -211,9 +213,20 @@ void initRecipes(void) {
     addRecipe(I_CHARCOAL, 1, ST_FURNACE, B_LOG, 1, 0, 0);
 }
 
+// ---------- Mudas ----------
+bool blocksMove(int block) { return block != B_AIR && block != B_SAPLING; }
+bool saplingSoil(int block) { return block == B_GRASS || block == B_DIRT; }
+
+// media de ticks ate crescer = SAPLING_GROW_CHANCE; cada bloco recebe
+// ticks/volume por frame, entao ticks = chance * volume / (minutos * 3600)
+int saplingRandomTicks(int volume) {
+    int t = SAPLING_GROW_CHANCE * volume / (SAPLING_TICKS_MIN * 3600);
+    return t > 0 ? t : 1;
+}
+
 // combustivel em meios-itens fundidos (wiki: carvao 8 itens, tronco/tabua 1,5, graveto 0,5)
 static const struct { uint8_t id, half; } fuels[] = {
-    {I_COAL, 16}, {I_CHARCOAL, 16}, {B_LOG, 3}, {B_PLANKS, 3}, {I_STICK, 1},
+    {I_COAL, 16}, {I_CHARCOAL, 16}, {B_LOG, 3}, {B_PLANKS, 3}, {I_STICK, 1}, {B_SAPLING, 1},
 };
 
 static bool hasFuel(int extraId, int extraN) {   // ha combustivel sem usar os ingredientes?

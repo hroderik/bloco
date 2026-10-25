@@ -40,6 +40,7 @@ Não usa código nem assets do Minecraft: todos os gráficos, ícones e a fonte 
 - 🎒 **Inventário de 36 slots** e barra rápida de 9
 - 🛠️ **Crafting** 2×2, bancada de trabalho e fornalha com combustível
 - 🗺️ **Minimapa** no DS, com modo superfície e modo caverna
+- 🌱 **Mudas de carvalho**: caem das folhas, são plantadas em grama ou terra e viram árvore com o tempo
 - 💾 **Salvar e carregar** o mundo, o inventário e o combustível
 
 ## 🕹️ Controles
@@ -88,6 +89,8 @@ Não usa código nem assets do Minecraft: todos os gráficos, ícones e a fonte 
 | <img src="docs/screenshots/ds1_mundo.png" width="220"> | <img src="docs/screenshots/ds2_coletando.png" width="220"> | <img src="docs/screenshots/ds6_paisagem.png" width="220"> |
 | **Mochila** | **Criar** | **Menu** |
 | <img src="docs/screenshots/ds3_mochila.png" width="220"> | <img src="docs/screenshots/ds4_criar.png" width="220"> | <img src="docs/screenshots/ds5_menu.png" width="220"> |
+| **Muda plantada** | **Virou árvore** | |
+| <img src="docs/screenshots/ds7_muda.png" width="220"> | <img src="docs/screenshots/ds8_arvore.png" width="220"> | |
 
 ### Game Boy Advance
 
@@ -96,8 +99,10 @@ Não usa código nem assets do Minecraft: todos os gráficos, ícones e a fonte 
 | <img src="docs/screenshots/gba1_coletando.png" width="360"> | <img src="docs/screenshots/gba4_cavando.png" width="360"> |
 | **Criar** | **Bancada** |
 | <img src="docs/screenshots/gba2_criar.png" width="360"> | <img src="docs/screenshots/gba3_bancada.png" width="360"> |
-| **Jogo salvo** | |
-| <img src="docs/screenshots/gba5_salvo.png" width="360"> | |
+| **Jogo salvo** | **Muda plantada** |
+| <img src="docs/screenshots/gba5_salvo.png" width="360"> | <img src="docs/screenshots/gba6_muda.png" width="360"> |
+| **Virou árvore** | |
+| <img src="docs/screenshots/gba7_arvore.png" width="360"> | |
 
 <sub>Prints das ROMs compiladas rodando em emulador. Também dá para gerar prints sem emulador com `make preview`, que roda o código do jogo no PC.</sub>
 
@@ -149,8 +154,9 @@ Detalhes de cada versão, otimizações e como gerar os prints: [`blocods/README
 - Velocidade: mão 1, madeira 2, pedra 4, ferro 6, diamante 8, ouro 12
 - Durabilidade: madeira 59, pedra 131, ferro 250, ouro 32, diamante 1561
 - Tier de coleta: pedra/carvão = madeira; ferro/lápis = pedra; ouro/redstone/diamante/esmeralda = ferro
-- Combustível: carvão 8 itens, tronco/tábua 1,5, graveto 0,5
-- Drops: folhas (graveto 2%, maçã 0,5%), cascalho (pederneira 10%), redstone 4-5, lápis 4-9
+- Combustível: carvão 8 itens, tronco/tábua 1,5, graveto e muda 0,5
+- Drops: folhas (muda 5%, graveto 2%, maçã 0,5%), cascalho (pederneira 10%), redstone 4-5, lápis 4-9
+- Mudas: crescem por ticks aleatórios com céu aberto acima; ao crescer, a grama embaixo vira terra
 
 </details>
 
@@ -158,11 +164,11 @@ Detalhes de cada versão, otimizações e como gerar os prints: [`blocods/README
 
 - [x] Fase 1: mundo, mineração e construção
 - [x] Fase 2: sobrevivência básica (ferramentas, crafting, fornalha, save)
-- [ ] Mudas e crescimento de árvores
+- [x] Mudas e crescimento de árvores
 - [ ] Mobs, vida e fome
 - [ ] Nether e End
 
-**Simplificações atuais:** mundo pequeno com altura comprimida, minérios por profundidade relativa e fornalha que funde na hora usando um estoque global de combustível.
+**Simplificações atuais:** mundo pequeno com altura comprimida, minérios por profundidade relativa, fornalha que funde na hora usando um estoque global de combustível, e mudas que crescem num estágio só, em cerca de 2 minutos em média (no Java são 2 estágios, uns 16 minutos), sem pó de osso e sem checar luz (só céu aberto).
 
 ---
 

@@ -9,6 +9,7 @@ Não usa código nem assets do Minecraft: todos os gráficos são gerados por c�
   (carvão no alto, diamante e redstone perto da rocha-matriz)
 - Mineração com tempo real (fórmula da Minecraft Wiki), tier de picareta e drops corretos
 - 20 ferramentas, inventário de 36 slots, crafting 2×2, bancada e fornalha com combustível
+- Mudas de carvalho (5% das folhas): plante em grama ou terra com L e, com céu aberto, viram árvore em ~2 min
 - HUD com barra rápida de ícones, nome do item, durabilidade e barra de quebra
 - Menu com abas INVENTÁRIO e CRIAR, fonte própria 5×7 e ícones de todos os itens
 - **Save no cartucho (SRAM)**: mundo, inventário e combustível

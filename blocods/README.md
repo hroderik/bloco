@@ -8,6 +8,7 @@ Não usa código nem assets do Minecraft: todos os gráficos são gerados por c�
 - Mineração com tempo real (fórmula da Minecraft Wiki), tier de picareta e drops corretos
 - 20 ferramentas (picareta, machado, pá e espada × madeira, pedra, ferro, ouro, diamante)
 - Inventário de 36 slots, crafting 2×2, bancada de trabalho e fornalha com combustível
+- Mudas de carvalho (5% das folhas): plante em grama ou terra com A e, com céu aberto, viram árvore em ~2 min
 - **Tela de baixo gráfica por toque**, com 4 abas:
   - **MUNDO**: minimapa (toque para alternar superfície/caverna), item na mão, mira, barra de quebra, estações por perto, barra rápida
   - **MOCHILA**: 36 slots com ícones; toque para pegar e toque no destino para trocar

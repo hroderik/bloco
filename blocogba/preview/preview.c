@@ -135,5 +135,44 @@ int main(void) {
     tap(K_START);
     tap(K_DOWN); tap(K_RIGHT); tap(K_RIGHT);
     shot("gba4_inventario");
+    tap(K_B);
+
+    // 5) mudas: planta tres numa campina e espera crescerem
+    int fx = W / 2 + 20;
+    for (; fx < W - 12; fx++) {
+        bool ok = true;
+        for (int dx = 0; dx < 8 && ok; dx++)
+            if (abs(surface[fx + dx] - surface[fx]) > 1 || world[surface[fx + dx]][fx + dx] != B_GRASS) ok = false;
+        for (int dx = -3; dx < 11 && ok; dx++)
+            for (int y = 0; y < surface[fx + dx]; y++) if (world[y][fx + dx]) ok = false;
+        if (ok) break;
+    }
+    goTo(fx, surface[fx] - 1);
+    facingLeft = false;
+    inv[2].id = B_SAPLING; inv[2].count = 4; inv[2].dmg = 0;
+    selSlot = 2; uiDirty = true;
+    run(0, 10);
+    int ptx2, pty2;
+    playerCenterTile(&ptx2, &pty2);
+    static const int at[3] = {2, 4, 7};
+    for (int i = 0; i < 3; i++) {
+        if (i == 2) { goTo(fx + 4, surface[fx + 4] - 1); run(0, 5); playerCenterTile(&ptx2, &pty2); }
+        int x = fx + at[i];
+        curDX = x - ptx2; curDY = surface[x] - 1 - pty2; tap(K_L);
+    }
+    goTo(fx - 2, surface[fx - 2] - 1);
+    curDX = 1; curDY = 0;
+    run(0, 5);
+    shot("gba5_mudas");
+    int grown = 0, frames = 0;       // longe das mudas: elas nao crescem em cima do jogador
+    while (grown < 3 && frames < 60 * 60 * 20) {
+        randomTicks(); frames++;
+        grown = 0;
+        for (int i = 0; i < 3; i++) grown += world[surface[fx + at[i]] - 1][fx + at[i]] == B_LOG;
+    }
+    printf("mudas cresceram em %d frames (%d s)\n", frames, frames / 60);
+    mapDirty = true;
+    run(0, 5);
+    shot("gba6_arvores");
     return 0;
 }

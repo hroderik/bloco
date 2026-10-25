@@ -119,5 +119,41 @@ int main(void) {
     h_dump("ds5_menu");
     touch(5, 5);                         // salvar
     h_dump("ds5_menu");
+
+    // 6) mudas: planta numa campina aberta e espera virar arvore
+    touch(1, 1);                         // aba MUNDO
+    int mx0 = 0, mz0 = 0;
+    for (int x = 6; x < WX - 6 && !mx0; x++)
+        for (int z = 10; z < WZ - 6; z++) {
+            int h = heightMap[x][z];
+            bool ok = world[x][h][z] == B_GRASS;
+            for (int dx = -2; dx <= 2 && ok; dx++)
+                for (int dz = -6; dz <= 2 && ok; dz++) {
+                    int hh = heightMap[x + dx][z + dz];
+                    if (hh > h || hh < h - 1) ok = false;
+                    for (int y = h + 1; y < WY; y++) if (world[x + dx][y][z + dz]) ok = false;
+                }
+            if (ok) { mx0 = x; mz0 = z; break; }
+        }
+    int my0 = heightMap[mx0][mz0];
+    placeAt(mx0, my0 + 1, mz0 - 4);
+    inv[3].id = B_SAPLING; inv[3].count = 3; inv[3].dmg = 0;
+    selSlot = 3;
+    step(0, 160);                        // ceu volta ao azul e o aviso some
+    lookAt(mx0 + 0.5f, my0 + 1.0f, mz0 + 0.5f);
+    step(0, 3);
+    int sx6 = prevX, sy6 = prevY, sz6 = prevZ;
+    press(KEY_A);                        // planta
+    lookAt(sx6 + 0.5f, sy6 + 0.6f, sz6 + 0.5f);
+    step(0, 3);
+    h_dump("ds6_muda");
+    int frames = 0;                      // tempo de jogo ate crescer (~2 min em media)
+    while (world[sx6][sy6][sz6] == B_SAPLING && frames < 60 * 60 * 20) { randomTicks(); frames++; }
+    printf("muda cresceu em %d frames (%d s)\n", frames, frames / 60);
+    pz -= FX(2);
+    step(0, 10);
+    lookAt(sx6 + 0.5f, sy6 + 3.0f, sz6 + 0.5f);
+    step(0, 3);
+    h_dump("ds7_arvore");
     return 0;
 }

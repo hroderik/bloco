@@ -3,6 +3,8 @@
 #include "core.h"
 #include "font.h"
 
+_Static_assert(NUM_BLOCKS <= ART_WALL, "ids de bloco invadem os tiles de parede");
+
 #define RGB ART_RGB
 const uint16_t artPal[2][16] = {
     { RGB(15,23,31), RGB(2,2,3),   RGB(6,20,4),  RGB(10,26,6), RGB(15,10,5), RGB(10,6,3),
@@ -33,6 +35,9 @@ static int oreSpot(int x, int y) {
     return ((x - 2) * (x - 2) + (y - 2) * (y - 2) < 3) || ((x - 5) * (x - 5) + (y - 5) * (y - 5) < 3) ||
            (x == 6 && y == 1) || (x == 1 && y == 6);
 }
+
+static int artAt(const char *const *art, int x, int y, char a, int ca, char b, int cb);
+static const char *const artSapling[8];
 
 static int blockPixel(int t, int x, int y) {
     uint32_t r = tileHash(t, x, y);
@@ -73,6 +78,7 @@ static int blockPixel(int t, int x, int y) {
     case B_GOLD_BLOCK:    return edge ? 9 : ((x + y) % 5 == 0 ? 9 : 8);
     case B_DIAMOND_BLOCK: return edge ? 11 : ((x + y) % 5 == 0 ? 14 : 12);
     case B_BEDROCK:       return r < 80 ? 1 : (r < 170 ? 7 : 6);
+    case B_SAPLING:       return artAt(artSapling, x, y, 0, 0, 0, 0);
     case ART_WALL:        return r < 40 ? 1 : 5;
     case ART_WALL2:       return r < 60 ? 1 : 7;
     }
@@ -86,6 +92,7 @@ static const char *const artGem[8]   = {"........", "..XXXX..", ".XXXXXX.", ".xX
 static const char *const artDust[8]  = {"........", "..X...X.", "....X...", ".X..x.X.", "...X....", ".x...X..", "...X..x.", "........"};
 static const char *const artFlint[8] = {"........", "...XX...", "..XXXX..", ".XXxXX..", ".XXXxX..", "..XxX...", "...X....", "........"};
 static const char *const artApple[8] = {"....5...", "...5d...", "..aaaa..", ".aaaaaa.", ".aaaaaa.", ".aaaaaa.", "..aaaa..", "........"};
+static const char *const artSapling[8] = {"...33...", ".3.323..", ".33a233.", "..a32a3.", ".3.a5a..", "....5...", "...55...", "....5..."};
 static const char *const artStick[8] = {"........", "......4.", ".....5..", "....4...", "...5....", "..4.....", ".5......", "........"};
 static const char *const artPick[8]  = {".HHHHH..", "H..S..H.", "...S....", "...S....", "...S....", "...S....", "...S....", "........"};
 static const char *const artAxe[8]   = {"..HHS...", ".HHHS...", ".HH.S...", "....S...", "....S...", "....S...", "....S...", "........"};

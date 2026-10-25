@@ -65,7 +65,7 @@ static inline int getBlock(int x, int y) {
     if (x < 0 || x >= W || y >= H) return B_BEDROCK;
     return world[y][x];
 }
-static inline bool solid(int x, int y) { return getBlock(x, y) != B_AIR; }
+static inline bool solid(int x, int y) { return blocksMove(getBlock(x, y)); }   // muda nao conta
 
 // VRAM: tiles de BG no charblock 0; mapas: 28 blocos, 29 paredes, 30 texto/HUD
 #define BG_TILES   ((volatile u32 *)VRAM)
@@ -229,6 +229,33 @@ static void generateWorld(void) {
             placeTree(x, surface[x]);
 }
 
+// ---------------- Mudas ----------------
+static int saplingTicks;   // ticks aleatorios por frame (ver core.h)
+static bool mapDirty = true;
+static bool playerInBox(int x0, int y0, int x1, int y1);
+
+// muda em (x,y) vira carvalho: precisa de terra embaixo, ceu aberto
+// (so ar ou folhas acima) e espaco para o tronco mais alto (6)
+static bool growSapling(int x, int y) {
+    if (!saplingSoil(getBlock(x, y + 1)) || y < 8) return false;
+    for (int yy = 0; yy < y; yy++)
+        if (world[yy][x] != B_AIR && world[yy][x] != B_LEAVES) return false;
+    if (playerInBox(x - 2, y - 8, x + 2, y)) return false;
+    world[y][x] = B_AIR;
+    world[y + 1][x] = B_DIRT;      // como no Java, a grama embaixo vira terra
+    placeTree(x, y + 1);
+    mapDirty = true;
+    return true;
+}
+
+static void randomTicks(void) {
+    for (int i = 0; i < saplingTicks; i++) {
+        u32 r = rnd() % (W * H);
+        int x = (int)(r % W), y = (int)(r / W);
+        if (world[y][x] == B_SAPLING && rnd() % SAPLING_GROW_CHANCE == 0) growSapling(x, y);
+    }
+}
+
 // ---------------- Save em SRAM ----------------
 #define SAVE_INV   8
 #define SAVE_FUEL  (SAVE_INV + INV_SIZE * 4)
@@ -278,7 +305,6 @@ static bool onGround, facingLeft;
 static int curDX = 1, curDY = 0;
 static int selSlot = 0;
 static int camX, camY, lastCTX = -999, lastCTY = -999;
-static bool mapDirty = true;
 static u16 prevKeys = 0;
 static u32 frameCount = 0;
 
@@ -287,6 +313,12 @@ static bool hitboxSolid(int x, int y) {
         for (int tx = x >> 3; tx <= (x + PW - 1) >> 3; tx++)
             if (solid(tx, ty)) return true;
     return false;
+}
+
+static bool playerInBox(int x0, int y0, int x1, int y1) {
+    int ax = (px >> 8) >> 3, bx = ((px >> 8) + PW - 1) >> 3;
+    int ay = (py >> 8) >> 3, by = ((py >> 8) + PH - 1) >> 3;
+    return ax <= x1 && bx >= x0 && ay <= y1 && by >= y0;
 }
 
 static void spawnPlayer(void) {
@@ -380,6 +412,10 @@ static void editBlocks(u16 keys, u16 down) {
         if (mineNeed > 0 && ++mineProg >= mineNeed) {
             harvest(world[ty][tx], selSlot);
             world[ty][tx] = B_AIR;
+            if (getBlock(tx, ty - 1) == B_SAPLING) {   // muda sem chao solta
+                world[ty - 1][tx] = B_AIR;
+                addItem(B_SAPLING, 1);
+            }
             mapDirty = true;
             stopMining();
             mineCooldown = 18;    // 6 ticks entre blocos (Java)
@@ -390,7 +426,10 @@ static void editBlocks(u16 keys, u16 down) {
     }
 
     // colocar com L
-    if ((down & K_L) && valid && world[ty][tx] == B_AIR && isPlaceable(inv[selSlot].id)) {
+    if ((down & K_L) && valid && world[ty][tx] == B_AIR && inv[selSlot].id == B_SAPLING &&
+        !saplingSoil(getBlock(tx, ty + 1))) {
+        setToast("MUDA SO EM GRAMA OU TERRA");
+    } else if ((down & K_L) && valid && world[ty][tx] == B_AIR && isPlaceable(inv[selSlot].id)) {
         int x0 = px >> 8, y0 = py >> 8;
         bool overlap = tx * 8 < x0 + PW && tx * 8 + 8 > x0 && ty * 8 < y0 + PH && ty * 8 + 8 > y0;
         if (!overlap) {
@@ -421,7 +460,7 @@ static void drawMap(void) {
             int b = (y < H && x < W) ? world[y][x] : B_BEDROCK;
             MAP_FG[idx] = (u16)(b | (iconBank(b) << 12));
             int wall = 0;
-            if (x < W && y > surface[x] && (b == B_AIR || b == B_LEAVES || b == B_GLASS))
+            if (x < W && y > surface[x] && (b == B_AIR || b == B_LEAVES || b == B_GLASS || b == B_SAPLING))
                 wall = y > surface[x] + 4 ? T_WALL2 : T_WALL;
             MAP_BG[idx] = (u16)wall;
         }
@@ -593,6 +632,7 @@ static void handleMenu(u16 keys, u16 down) {
 void gameInit(void) {
     setupGraphics();
     initRecipes();
+    saplingTicks = saplingRandomTicks(W * H);
     invClear();
     if (!loadGame()) generateWorld();
     spawnPlayer();
@@ -614,6 +654,7 @@ void gameFrame(u16 keys) {
 
     updatePlayer(keys, down);
     if (!menuOpen) editBlocks(keys, down);
+    randomTicks();
     updateCamera();
 
     if ((frameCount & 15) == 0) {
