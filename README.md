@@ -11,7 +11,7 @@ Minere, colete, crie ferramentas e construa — em 3D com tela de toque no DS, o
 ![Linguagem](https://img.shields.io/badge/linguagem-C-blue)
 ![Status](https://img.shields.io/badge/status-fase%202%3A%20sobreviv%C3%AAncia-orange)
 
-<img src="blocods/preview/ds1_mundo.png" alt="BlocoDS" height="360">&nbsp;&nbsp;&nbsp;<img src="blocogba/preview/gba1_coletando.png" alt="BlocoGBA" height="240">
+<img src="docs/screenshots/ds1_mundo.png" alt="BlocoDS" height="360">&nbsp;&nbsp;&nbsp;<img src="docs/screenshots/gba4_cavando.png" alt="BlocoGBA" height="240">
 
 </div>
 
@@ -83,19 +83,23 @@ Não usa código nem assets do Minecraft: todos os gráficos, ícones e a fonte 
 
 ### Nintendo DS
 
-| Mundo | Caverna | Mochila | Criar | Menu |
-|:---:|:---:|:---:|:---:|:---:|
-| <img src="blocods/preview/ds1_mundo.png" width="160"> | <img src="blocods/preview/ds3_caverna.png" width="160"> | <img src="blocods/preview/ds4_mochila.png" width="160"> | <img src="blocods/preview/ds2_criar.png" width="160"> | <img src="blocods/preview/ds5_menu.png" width="160"> |
+| Mundo | Coletando | Mapa de caverna |
+|:---:|:---:|:---:|
+| <img src="docs/screenshots/ds1_mundo.png" width="220"> | <img src="docs/screenshots/ds2_coletando.png" width="220"> | <img src="docs/screenshots/ds6_paisagem.png" width="220"> |
+| **Mochila** | **Criar** | **Menu** |
+| <img src="docs/screenshots/ds3_mochila.png" width="220"> | <img src="docs/screenshots/ds4_criar.png" width="220"> | <img src="docs/screenshots/ds5_menu.png" width="220"> |
 
 ### Game Boy Advance
 
-| Coletando | Caverna |
+| Coletando | Cavando |
 |:---:|:---:|
-| <img src="blocogba/preview/gba1_coletando.png" width="360"> | <img src="blocogba/preview/gba3_caverna.png" width="360"> |
-| **Criando** | **Inventário** |
-| <img src="blocogba/preview/gba2_criando.png" width="360"> | <img src="blocogba/preview/gba4_inventario.png" width="360"> |
+| <img src="docs/screenshots/gba1_coletando.png" width="360"> | <img src="docs/screenshots/gba4_cavando.png" width="360"> |
+| **Criar** | **Bancada** |
+| <img src="docs/screenshots/gba2_criar.png" width="360"> | <img src="docs/screenshots/gba3_bancada.png" width="360"> |
+| **Jogo salvo** | |
+| <img src="docs/screenshots/gba5_salvo.png" width="360"> | |
 
-<sub>Imagens geradas por `make preview`, que roda o código real do jogo no PC com cenários roteirizados.</sub>
+<sub>Prints das ROMs compiladas rodando em emulador. Também dá para gerar prints sem emulador com `make preview`, que roda o código do jogo no PC.</sub>
 
 ## 📥 Download
 
