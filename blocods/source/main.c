@@ -361,7 +361,7 @@ static void renderWorld(void) {
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     gluLookAtf32(ex, ey, ez, ex + fwdX, ey + fwdY, ez + fwdZ, 0, FX(1), 0);
-    glScalef32(FX(8));
+    glScalef32(FX(8), FX(8), FX(8));
     glPolyFmt(POLY_ALPHA(31) | POLY_CULL_NONE);
     glBegin(GL_QUADS);
     quadCount = 0;
@@ -588,18 +588,18 @@ static void nameFit(int id, char *buf, int max) {
 }
 
 // ---- sprites (OAM sombra) ----
-static u16 oamSub[128 * 4];
+static u16 oamShadow[128 * 4];
 static int nSpr;
 static void sprReset(void) {
-    for (int i = 0; i < 128; i++) { oamSub[i * 4] = 0x0200; oamSub[i * 4 + 1] = 0; oamSub[i * 4 + 2] = 0; }
+    for (int i = 0; i < 128; i++) { oamShadow[i * 4] = 0x0200; oamShadow[i * 4 + 1] = 0; oamShadow[i * 4 + 2] = 0; }
     nSpr = 0;
 }
 static void sprPut(int x, int y, int tile, int pal, bool big) {
     if (nSpr >= 128) return;
     int i = nSpr++;
-    oamSub[i * 4]     = (u16)(y & 255);
-    oamSub[i * 4 + 1] = (u16)((x & 511) | (big ? 0x4000 : 0));
-    oamSub[i * 4 + 2] = (u16)(tile | (pal << 12));
+    oamShadow[i * 4]     = (u16)(y & 255);
+    oamShadow[i * 4 + 1] = (u16)((x & 511) | (big ? 0x4000 : 0));
+    oamShadow[i * 4 + 2] = (u16)(tile | (pal << 12));
 }
 static void sprIcon16(int x, int y, int id) { if (id) sprPut(x, y, OBJ_ICON16(id), iconBank(id), true); }
 static void sprIcon8(int x, int y, int id) { if (id) sprPut(x, y, OBJ_ICON8(id), iconBank(id), false); }
@@ -1064,7 +1064,7 @@ void gameInit(void) {
 
 void gameFrame(void) {
     // OAM da tela de baixo e copiada logo apos o VBlank
-    for (int i = 0; i < 128 * 4; i++) OAM_SUB[i] = oamSub[i];
+    for (int i = 0; i < 128 * 4; i++) OAM_SUB[i] = oamShadow[i];
 
     scanKeys();
     u32 held = keysHeld(), down = keysDown();

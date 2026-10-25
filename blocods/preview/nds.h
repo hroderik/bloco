@@ -15,7 +15,7 @@ typedef struct {u16 rawx,rawy,px,py,z1,z2;} touchPosition;
 void videoSetMode(u32); void consoleDemoInit(void); void consoleClear(void); int glInit(void); void glEnable(int);
 void glClearColor(u8,u8,u8,u8); void glClearPolyID(u8); void glClearDepth(u16); void glViewport(u8,u8,u8,u8);
 void glMatrixMode(int); void glLoadIdentity(void); void gluPerspective(float,float,float,float);
-void gluLookAtf32(int32,int32,int32,int32,int32,int32,int32,int32,int32); void glScalef32(int32); void glPolyFmt(u32);
+void gluLookAtf32(int32,int32,int32,int32,int32,int32,int32,int32,int32); void glScalef32(int32,int32,int32); void glPolyFmt(u32);
 void glBegin(int); void glEnd(void); void glColor(u16); void glVertex3v16(v16,v16,v16); void glFlush(u32);
 s16 sinLerp(s16); s16 cosLerp(s16); void scanKeys(void); u32 keysHeld(void); u32 keysDown(void);
 void touchRead(touchPosition*); void swiWaitForVBlank(void); int iprintf(const char*,...);

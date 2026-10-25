@@ -33,7 +33,7 @@ void gluLookAtf32(int32 ex,int32 ey,int32 ez,int32 lx,int32 ly,int32 lz,int32 ux
   M4 r=ident(); for(int i=0;i<3;i++){ r.m[i*4+0]=s[i]; r.m[i*4+1]=uu[i]; r.m[i*4+2]=-f[i]; }
   r.m[12]=-(s[0]*e[0]+s[1]*e[1]+s[2]*e[2]); r.m[13]=-(uu[0]*e[0]+uu[1]*e[1]+uu[2]*e[2]); r.m[14]=(f[0]*e[0]+f[1]*e[1]+f[2]*e[2]);
   multCur(r); }
-void glScalef32(int32 s){ M4 r=ident(); r.m[0]=r.m[5]=r.m[10]=s/4096.f; multCur(r); }
+void glScalef32(int32 x,int32 y,int32 z){ M4 r=ident(); r.m[0]=x/4096.f; r.m[5]=y/4096.f; r.m[10]=z/4096.f; multCur(r); }
 void glPolyFmt(u32 p){(void)p;}
 void glBegin(int m){(void)m;qn=0;} void glEnd(void){} void glColor(u16 c){color=c;}
 
